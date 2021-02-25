@@ -13,29 +13,31 @@ struct AddView: View {
     init (success: @escaping () -> Void) {
         self.success = success
     }
+    
     @Environment(\.presentationMode) var presentationMode: Binding<PresentationMode>
 
-
     @StateObject var viewModel: ViewModel = ViewModel()
+    
     var body: some View {
+        VStack {
             Form {
                 Section {
                     HStack {
                         Text("Symbol: ")
-                        TextField("AAPL", text: $viewModel.symbol)
+                        TextField("AAPL", text: $viewModel.symbol.toNonOptional())
                             .textCase(/*@START_MENU_TOKEN@*/.uppercase/*@END_MENU_TOKEN@*/)
                             .disableAutocorrection(true)
                             
                     }
                     HStack {
                         Text("Quantity: ")
-                        TextField("Enter a number", text: $viewModel.quantity)
+                        TextField("Enter a number", text: $viewModel.quantity.toNonOptional())
                             .disableAutocorrection(true)
                             .keyboardType(.numberPad)
                     }
                     HStack {
                         Text("Price: ")
-                        TextField("Average price per share", text: $viewModel.purchasePrice)
+                        TextField("Average price per share", text: $viewModel.purchasePrice.toNonOptional())
                     }
                     HStack {
                         Text("Date: ")
@@ -46,24 +48,39 @@ struct AddView: View {
                 }
                 Section {
                     Button(action: {
-                        if (viewModel.isValid()) {
                             viewModel.submit(completion: {
-                                success()
+                                self.success()
                                 self.presentationMode.wrappedValue.dismiss()
                             })
-                            
-                        }
-                        
                     }, label: {
-                        HStack{
+                        HStack {
                             Spacer()
                             Text("Submit")
                                 .foregroundColor(.blue)
                                 .bold()
                             Spacer()
                         }
+                        
                     })
                 }
-            }.navigationTitle("Add Lot")
+            }
+        }
+        .navigationTitle("Add Lot")
+        .alert(isPresented: self.$viewModel.error) {
+            Alert(title: Text("Item Not Added"), message: Text("Please fill out all fields"), dismissButton: .default(Text("OK")))
+        }
+    }
+}
+
+extension Binding where Value == String? {
+    func toNonOptional() -> Binding<String> {
+        return Binding<String>(
+            get: {
+                return self.wrappedValue ?? ""
+            },
+            set: {
+                self.wrappedValue = $0
+            }
+        )
     }
 }

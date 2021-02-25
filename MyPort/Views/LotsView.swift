@@ -38,11 +38,13 @@ struct LotsView: View {
                             .cornerRadius(/*@START_MENU_TOKEN@*/3.0/*@END_MENU_TOKEN@*/)
                     }
                 }.onDelete(perform: { indexSet in viewModel.delete(indexSet: indexSet) })
-                
             }
             Spacer()
-
-        }.navigationTitle("My Lots")
+        }
+        .navigationTitle("My Lots")
+        .alert(isPresented: self.$viewModel.error) {
+            Alert(title: Text("Item Not Deleted"), message: Text("Please try again"), dismissButton: .default(Text("OK")))
+        }
         
     }
 }

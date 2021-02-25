@@ -9,38 +9,37 @@ import Foundation
 
 extension AddView {
     class ViewModel: ObservableObject {
-        @Published var symbol: String = ""
-        @Published var purchasePrice: String = ""
-        @Published var quantity: String = ""
+        @Published var symbol: String?
+        @Published var purchasePrice: String?
+        @Published var quantity: String?
         @Published var date: Date = Date()
+        @Published var error: Bool = false
         
-        public func isValid() -> Bool {
-            let purchasePrice: Double? = Double(self.purchasePrice)
-            let quantity: Int64? = Int64(self.quantity)
-            if let _ = purchasePrice, let _ = quantity {
-                return true
+        public func submit(completion: () -> Void) {
+            self.error = false
+            guard let purchasePrice = Double(self.purchasePrice ?? ""), let quantity = Int64(self.quantity ?? ""),
+                  let symbol = self.symbol else {
+                self.error = true
+                return
             }
-            return false
-        }
-        
-        func assignValues(trade: Trade) -> Trade {
-            trade.date = self.date
-            trade.quantity = Int64(self.quantity)!
-            trade.symbol = self.symbol.uppercased()
-            trade.sharePrice = Double(self.purchasePrice)!
-            trade.type = TradeType.Purchase.rawValue
-            return trade
-        }
-        
-        public func submit(completion: @escaping () -> Void) {
-            DispatchQueue.main.async {
-                let context = AppDataService.getInstance().persistentContainer.viewContext
-                var trade = Trade(context: context)
-                trade = self.assignValues(trade: trade)
-                try! context.save()
-                completion()
-            }
+
+            let context = AppDataService.getInstance().persistentContainer.viewContext
             
+            let trade = Trade(context: context)
+            
+            trade.date = date
+            trade.quantity = quantity
+            trade.symbol = symbol.uppercased()
+            trade.sharePrice = purchasePrice
+            trade.type = TradeType.Purchase.rawValue
+            
+            do {
+                try context.save()
+            } catch {
+                self.error = true
+                return
+            }
+            completion()
             
         }
     }

@@ -13,6 +13,7 @@ extension LotsView {
         @Published var lots: [Lot] = [Lot]()
         var apiData: [Quote]?
         var dataService = AppDataService.getInstance()
+        @Published var error: Bool = false
         
         public init() {
             self.getLots()
@@ -25,11 +26,15 @@ extension LotsView {
                 guard let trade: Trade = context.object(with: id) as? Trade else { continue }
                 context.delete(trade)
             }
-            try? context.save()
+            do {
+                try context.save()
+            } catch {
+                self.error = true
+                return
+            }
             DispatchQueue.main.async {
                 self.lots.remove(atOffsets: indexSet)
             }
-            
         }
         
         public func getLots () {
